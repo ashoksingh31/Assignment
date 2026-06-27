@@ -56,11 +56,12 @@ def checkout(discount_code=None):
 
     stats.total_items_sold += sum(
         item.quantity for item in cart
-    )
+            )
 
-    stats["total_revenue"] += total
+    stats.total_revenue += total
 
-    stats["total_discount_given"] += discount_amount
+    stats.total_discount_given += discount_amount
+
 
     clear_cart()
 
