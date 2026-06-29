@@ -88,3 +88,46 @@ def test_empty_cart_checkout(api_client):
     assert response.status_code == 400
 
     assert response.json()["detail"] == "Cart is empty"
+
+    # Verify a discount code cannot be reused after it has been applied once.
+def test_discount_code_reuse(api_client):
+    for _ in range(3):
+        add_keyboard(api_client, 1)
+        api_client.post("/checkout", json={})
+
+    coupon = api_client.post("/admin/discount/generate").json()["code"]
+
+    add_keyboard(api_client, 5)
+    api_client.post("/checkout", json={"discount_code": coupon})
+
+    add_keyboard(api_client, 5)
+    response = api_client.post("/checkout", json={"discount_code": coupon})
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid discount code"
+
+
+# Verify cart is empty after a successful checkout.
+def test_cart_cleared_after_checkout(api_client):
+    add_keyboard(api_client, 3)
+    api_client.post("/checkout", json={})
+
+    response = api_client.get("/cart")
+    assert response.status_code == 200
+    assert response.json()["items"] == []
+    assert response.json()["subtotal"] == 0
+
+
+# Verify total_discount_given in stats is updated correctly after a discounted order.
+def test_stats_discount_given(api_client):
+    for _ in range(3):
+        add_keyboard(api_client, 1)
+        api_client.post("/checkout", json={})
+
+    coupon = api_client.post("/admin/discount/generate").json()["code"]
+
+    add_keyboard(api_client, 5)
+    api_client.post("/checkout", json={"discount_code": coupon})
+
+    response = api_client.get("/admin/stats")
+    assert response.json()["total_discount_given"] == 500

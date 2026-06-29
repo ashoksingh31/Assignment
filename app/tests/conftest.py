@@ -1,26 +1,38 @@
 import pytest
-
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.storage import (
-    cart,
-    orders,
-    discount_codes,
-    stats,
-)
+from app.storage import cart, orders, discount_codes, stats
 
-client = TestClient(app)
+
+# ---------------------------------------------------------------------------
+# Test Configuration
+# ---------------------------------------------------------------------------
+# This file is auto-loaded by pytest before any test runs.
+# It provides shared fixtures available to all test files.
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
 def api_client():
-    return client
+    """
+    Provide a fresh TestClient for each test.
+    TestClient wraps the FastAPI app and allows HTTP calls without
+    spinning up a real server.
+    """
+    return TestClient(app)
 
 
 @pytest.fixture(autouse=True)
 def reset_storage():
+    """
+    Reset all in-memory storage before every test automatically.
 
+    `autouse=True` means this runs for every test without needing to
+    explicitly request it. This prevents state from one test bleeding
+    into the next — e.g. a checkout in test A should not affect order
+    counts seen by test B.
+    """
     cart.clear()
     orders.clear()
     discount_codes.clear()
